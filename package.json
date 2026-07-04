@@ -1,0 +1,1 @@
+{"name":"helden-dashboard","version":"1.0.0","dependencies":{"express":"^4.18.2","better-sqlite3":"^11.0.0"},"scripts":{"start":"node server.js"}}

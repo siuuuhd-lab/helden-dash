@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard – Minecraft Helden Ultimate</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  width: 240px;
+  background: #161b22;
+  border-right: 1px solid #30363d;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.sidebar-header {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid #30363d;
+  margin-bottom: 12px;
+}
+.sidebar-header h2 { font-size: 16px; }
+.sidebar-header .sub { color: #8b949e; font-size: 12px; }
+.server-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.badge-online { background: #1a3a2a; color: #3fb950; }
+.badge-offline { background: #3a1a1a; color: #f85149; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #8b949e;
+  font-size: 14px;
+  transition: 0.2s;
+}
+.nav-item:hover { background: #1c2333; color: #e6edf3; }
+.nav-item.active { background: #1c2333; color: #58a6ff; border-right: 2px solid #58a6ff; }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid #30363d;
+  font-size: 11px;
+  color: #484f58;
+}
+.logout-btn {
+  background: none;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 8px;
+  width: 100%;
+}
+.logout-btn:hover { border-color: #f85149; color: #f85149; }
+.content {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+}
+.content h2 { font-size: 22px; margin-bottom: 8px; }
+.content .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 24px; }
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+}
+.card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; margin-bottom: 4px; }
+.card .value { font-size: 22px; font-weight: 700; }
+.card .value.green { color: #3fb950; }
+.card .value.red { color: #f85149; }
+.card .value.blue { color: #58a6ff; }
+.online-banner {
+  background: #3a1a1a;
+  border: 1px solid #f85149;
+  color: #f85149;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; color: #8b949e; text-transform: uppercase; padding: 8px 12px; border-bottom: 1px solid #30363d; }
+td { padding: 8px 12px; border-bottom: 1px solid #21262d; font-size: 14px; }
+tr:hover td { background: #1c2333; }
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; background: #161b22; border: 1px solid #30363d; color: #8b949e; }
+.tab.active { background: #1c2333; color: #58a6ff; border-color: #58a6ff; }
+.copy-box {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  word-break: break-all;
+  margin-bottom: 12px;
+}
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-item .ilabel { font-size: 12px; color: #8b949e; }
+.info-item .ivalue { font-size: 14px; }
+.placeholder { color: #484f58; text-align: center; padding: 40px; }
+.loading { text-align: center; padding: 40px; color: #8b949e; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>⚔ Helden Dash</h2>
+    <div class="sub" id="serverStatus">Offline</div>
+    <span id="badge" class="server-badge badge-offline">● OFFLINE</span>
+  </div>
+  <div class="nav-item active" onclick="showSection('overview')">📊 Überblick</div>
+  <div class="nav-item" onclick="showSection('players')">👤 Spieler</div>
+  <div class="nav-item" onclick="showSection('boss')">👹 Boss</div>
+  <div class="nav-item" onclick="showSection('events')">🎯 Events</div>
+  <div class="nav-item" onclick="showSection('leaderboards')">🏆 Leaderboards</div>
+  <div class="nav-item" onclick="showSection('premium')">💎 Premium</div>
+  <div class="nav-item" onclick="showSection('teams')">👥 Teams</div>
+  <div class="nav-item" onclick="showSection('server')">ℹ️ Server Info</div>
+  <div class="nav-item" onclick="showSection('settings')">⚙️ Einstellungen</div>
+  <div class="sidebar-footer">
+    <div>Minecraft Helden Ultimate</div>
+    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+  </div>
+</div>
+<div class="content" id="content"></div>
+
+<script>
+const key = sessionStorage.getItem('dash_key');
+if (!key) window.location.href = '/';
+
+let serverData = JSON.parse(sessionStorage.getItem('dash_server') || '{}');
+
+function logout() {
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+function updateHeader() {
+  const online = serverData.online !== false;
+  document.getElementById('serverStatus').textContent = serverData.server_name || 'Unbekannt';
+  const badge = document.getElementById('badge');
+  badge.textContent = online ? '● ONLINE' : '● OFFLINE';
+  badge.className = 'server-badge ' + (online ? 'badge-online' : 'badge-offline');
+}
+
+async function apiGet(endpoint) {
+  try {
+    const r = await fetch(`/api/v1/${endpoint}?key=${key}`, { signal: AbortSignal.timeout(10000) });
+    return await r.json();
+  } catch (e) {
+    return { error: 'Server unreachable' };
+  }
+}
+
+function showSection(name) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.target.classList.add('active');
+  const content = document.getElementById('content');
+
+  if (name === 'overview') renderOverview(content);
+  else if (name === 'players') renderPlayers(content);
+  else if (name === 'boss') renderBoss(content);
+  else if (name === 'events') renderEvents(content);
+  else if (name === 'leaderboards') renderLeaderboards(content);
+  else if (name === 'premium') renderPremium(content);
+  else if (name === 'teams') renderTeams(content);
+  else if (name === 'server') renderServerInfo(content);
+  else if (name === 'settings') renderSettings(content);
+}
+
+async function renderOverview(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const status = await apiGet('status');
+  const players = await apiGet('players');
+
+  const online = serverData.online !== false;
+  el.innerHTML = `
+    ${!online ? '<div class="online-banner">⚠ Server OFFLINE – Letzter Kontakt: vor ' + Math.round((Date.now() - new Date(serverData.last_seen).getTime())/60000) + ' Minuten</div>' : ''}
+    <h2>📊 Überblick</h2>
+    <p class="subtitle">${serverData.server_name || 'Server'}</p>
+    <div class="cards">
+      <div class="card"><div class="label">Online</div><div class="value ${status.online_players > 0 ? 'green' : 'red'}">${status.online_players || 0}/${status.max_players || 0}</div></div>
+      <div class="card"><div class="label">Server</div><div class="value blue">${status.server_version || serverData.server_version || '?'}</div></div>
+      <div class="card"><div class="label">TPS</div><div class="value ${(status.tps || 0) > 18 ? 'green' : 'red'}">${status.tps ? status.tps.toFixed(1) : '?'}</div></div>
+      <div class="card"><div class="label">Uptime</div><div class="value">${status.uptime_seconds ? Math.floor(status.uptime_seconds/3600)+'h '+Math.floor((status.uptime_seconds%3600)/60)+'m' : '?'}</div></div>
+    </div>
+    <h3 style="margin-bottom:12px">Spieler (${(players.players||[]).length})</h3>
+    ${renderPlayerTable(players.players || [])}
+  `;
+}
+
+function renderPlayerTable(players) {
+  if (!players.length) return '<div class="placeholder">Keine Spieler online</div>';
+  return `<table><tr><th>Name</th><th>♥</th><th>Kills</th><th>Tode</th><th>Elim</th><th>Premium</th><th>Online</th></tr>
+    ${players.map(p => `<tr>
+      <td>${p.name}</td><td>${p.hearts}</td><td>${p.kills}</td><td>${p.deaths}</td><td>${p.eliminations}</td>
+      <td>${p.premium ? '💎' : ''}</td><td>${p.online !== false ? '✅' : '❌'}</td>
+    </tr>`).join('')}</table>`;
+}
+
+async function renderPlayers(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const data = await apiGet('players');
+  el.innerHTML = `
+    <h2>👤 Spieler</h2>
+    <p class="subtitle">${(data.players||[]).length} online</p>
+    ${renderPlayerTable(data.players || [])}
+  `;
+}
+
+async function renderBoss(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const status = await apiGet('bosses/status');
+  el.innerHTML = `
+    <h2>👹 Boss</h2>
+    <p class="subtitle">Boss-Konfiguration</p>
+    <div class="cards">
+      <div class="card"><div class="label">Enabled</div><div class="value ${status.enabled ? 'green' : 'red'}">${status.enabled ? '✅' : '❌'}</div></div>
+      <div class="card"><div class="label">Active</div><div class="value ${status.active ? 'green' : 'red'}">${status.active ? '✅' : '❌'}</div></div>
+      <div class="card"><div class="label">Min Players</div><div class="value">${status.min_players || 0}</div></div>
+      <div class="card"><div class="label">Health</div><div class="value">${status.health || 0}</div></div>
+      <div class="card"><div class="label">Damage</div><div class="value">${status.damage || 0}</div></div>
+      <div class="card"><div class="label">Reward Kills</div><div class="value">${status.reward_kills || 0}</div></div>
+    </div>
+  `;
+}
+
+async function renderEvents(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const status = await apiGet('events/status');
+  el.innerHTML = `
+    <h2>🎯 Events</h2>
+    <p class="subtitle">Aktive Events</p>
+    <div class="cards">
+      <div class="card"><div class="label">Boss Enabled</div><div class="value ${status.boss_events_enabled ? 'green' : 'red'}">${status.boss_events_enabled ? '✅' : '❌'}</div></div>
+      <div class="card"><div class="label">System Available</div><div class="value ${status.boss_system_available ? 'green' : 'red'}">${status.boss_system_available ? '✅ Premium' : '❌'}</div></div>
+      <div class="card"><div class="label">Event Active</div><div class="value ${status.boss_event_active ? 'green' : 'red'}">${status.boss_event_active ? '✅' : '❌'}</div></div>
+    </div>
+    <div class="placeholder">Keine Events aktiv</div>
+  `;
+}
+
+let lbTab = 'kills';
+async function renderLeaderboards(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const data = await apiGet('leaderboards');
+  const types = ['kills', 'hearts', 'eliminations'];
+  el.innerHTML = `
+    <h2>🏆 Leaderboards</h2>
+    <p class="subtitle">Top 10</p>
+    <div class="tabs">
+      ${types.map(t => `<div class="tab ${t === lbTab ? 'active' : ''}" onclick="switchLB('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
+    </div>
+    <div id="lbContent">${renderLBTable(data[lbTab] || [])}</div>
+  `;
+}
+function switchLB(type) { lbTab = type; showSection('leaderboards'); }
+function renderLBTable(entries) {
+  if (!entries.length) return '<div class="placeholder">Keine Daten</div>';
+  return `<table><tr><th>Rang</th><th>Name</th><th>Wert</th></tr>
+    ${entries.map(e => `<tr><td>#${e.rank}</td><td>${e.name}</td><td>${e.value}</td></tr>`).join('')}</table>`;
+}
+
+async function renderPremium(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const data = await apiGet('premium');
+  el.innerHTML = `
+    <h2>💎 Premium</h2>
+    <p class="subtitle">Lizenz-Status</p>
+    <div class="cards">
+      <div class="card"><div class="label">Premium</div><div class="value ${data.premium ? 'green' : 'red'}">${data.premium ? '✅ Aktiv' : '❌ Inaktiv'}</div></div>
+      <div class="card"><div class="label">Key konfiguriert</div><div class="value ${data.key_configured ? 'green' : 'red'}">${data.key_configured ? '✅ Ja' : '❌ Nein'}</div></div>
+    </div>
+    <p style="color:#8b949e;margin-top:16px">❓ Kaufe Premium: <a href="https://discord.gg/pxSJynZC6X" style="color:#58a6ff" target="_blank">discord.gg/pxSJynZC6X</a></p>
+  `;
+}
+
+async function renderTeams(el) {
+  const data = await apiGet('teams');
+  el.innerHTML = `
+    <h2>👥 Teams</h2>
+    <p class="subtitle">${data.count || 0} Teams</p>
+    <div class="placeholder">Teams-Feature kommt bald!</div>
+  `;
+}
+
+async function renderServerInfo(el) {
+  el.innerHTML = '<div class="loading">⏳ Lade...</div>';
+  const data = await apiGet('server');
+  el.innerHTML = `
+    <h2>ℹ️ Server Info</h2>
+    <p class="subtitle">Details</p>
+    <div class="info-grid">
+      <div class="info-item"><div class="ilabel">Plugin-Version</div><div class="ivalue">${data.version || '?'}</div></div>
+      <div class="info-item"><div class="ilabel">Server-Version</div><div class="ivalue">${data.server_version || '?'}</div></div>
+      <div class="info-item"><div class="ilabel">Bukkit</div><div class="ivalue">${data.bukkit_version || '?'}</div></div>
+      <div class="info-item"><div class="ilabel">Minecraft</div><div class="ivalue">${data.minecraft_version || '?'}</div></div>
+      <div class="info-item"><div class="ilabel">Online Mode</div><div class="ivalue">${data.online_mode ? 'Ja' : 'Nein'}</div></div>
+      <div class="info-item"><div class="ilabel">Premium</div><div class="ivalue">${data.premium ? '✅' : '❌'}</div></div>
+    </div>
+    <div class="info-item" style="margin-top:16px"><div class="ilabel">MOTD</div><div class="ivalue">${data.motd || serverData.motd || '?'}</div></div>
+  `;
+}
+
+function renderSettings(el) {
+  el.innerHTML = `
+    <h2>⚙️ Einstellungen</h2>
+    <p class="subtitle">Dein Access-Key</p>
+    <div class="copy-box" id="keyBox">${key}</div>
+    <button class="tab" onclick="copyKey()" style="margin-bottom:24px">📋 Kopieren</button>
+    <div class="info-grid">
+      <div class="info-item"><div class="ilabel">Server Name</div><div class="ivalue">${serverData.server_name || '?'}</div></div>
+      <div class="info-item"><div class="ilabel">IP</div><div class="ivalue">${serverData.ip || '?'}:${serverData.port || 8080}</div></div>
+      <div class="info-item"><div class="ilabel">API-Port</div><div class="ivalue">${serverData.port || 8080}</div></div>
+      <div class="info-item"><div class="ilabel">Plugin</div><div class="ivalue">${serverData.plugin_version || '?'}</div></div>
+    </div>
+    <p style="color:#484f58;margin-top:24px;font-size:13px">⚠ Änderungen nur in der config.yml auf dem Server möglich</p>
+  `;
+}
+function copyKey() {
+  navigator.clipboard.writeText(key);
+  document.getElementById('keyBox').style.borderColor = '#3fb950';
+  setTimeout(() => document.getElementById('keyBox').style.borderColor = '#30363d', 1000);
+}
+
+updateHeader();
+showSection('overview');
+</script>
+</body>
+</html>
