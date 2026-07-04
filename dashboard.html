@@ -170,12 +170,18 @@ function updateHeader() {
   badge.className = 'server-badge ' + (online ? 'badge-online' : 'badge-offline');
 }
 
+let apiOffline = false;
+
 async function apiGet(endpoint) {
   try {
     const r = await fetch(`/api/v1/${endpoint}?key=${key}`, { signal: AbortSignal.timeout(10000) });
-    return await r.json();
+    const data = await r.json();
+    if (data.error) { apiOffline = true; return {}; }
+    apiOffline = false;
+    return data;
   } catch (e) {
-    return { error: 'Server unreachable' };
+    apiOffline = true;
+    return {};
   }
 }
 
@@ -201,18 +207,25 @@ async function renderOverview(el) {
   const players = await apiGet('players');
 
   const online = serverData.online !== false;
+  const hbOnline = serverData.online_players || 0;
+  const hbMax = serverData.max_players || 0;
+  const liveOnline = status.online_players;
+  const liveMax = status.max_players;
+  const hasLive = !apiOffline && liveOnline !== undefined;
+
   el.innerHTML = `
     ${!online ? '<div class="online-banner">⚠ Server OFFLINE – Letzter Kontakt: vor ' + Math.round((Date.now() - new Date(serverData.last_seen).getTime())/60000) + ' Minuten</div>' : ''}
+    ${apiOffline ? '<div class="online-banner" style="background:#1a1a3a;border-color:#58a6ff;color:#58a6ff">ℹ Live-API nicht erreichbar (Port 8080). Zeige Daten aus letztem Heartbeat.</div>' : ''}
     <h2>📊 Überblick</h2>
     <p class="subtitle">${serverData.server_name || 'Server'}</p>
     <div class="cards">
-      <div class="card"><div class="label">Online</div><div class="value ${status.online_players > 0 ? 'green' : 'red'}">${status.online_players || 0}/${status.max_players || 0}</div></div>
+      <div class="card"><div class="label">Online</div><div class="value ${(hasLive ? liveOnline : hbOnline) > 0 ? 'green' : 'red'}">${hasLive ? liveOnline : hbOnline}/${hasLive ? liveMax : hbMax}</div></div>
       <div class="card"><div class="label">Server</div><div class="value blue">${status.server_version || serverData.server_version || '?'}</div></div>
-      <div class="card"><div class="label">TPS</div><div class="value ${(status.tps || 0) > 18 ? 'green' : 'red'}">${status.tps ? status.tps.toFixed(1) : '?'}</div></div>
-      <div class="card"><div class="label">Uptime</div><div class="value">${status.uptime_seconds ? Math.floor(status.uptime_seconds/3600)+'h '+Math.floor((status.uptime_seconds%3600)/60)+'m' : '?'}</div></div>
+      <div class="card"><div class="label">TPS</div><div class="value ${(status.tps || 0) > 18 ? 'green' : 'red'}">${status.tps ? status.tps.toFixed(1) : '-'}</div></div>
+      <div class="card"><div class="label">Uptime</div><div class="value">${status.uptime_seconds ? Math.floor(status.uptime_seconds/3600)+'h '+Math.floor((status.uptime_seconds%3600)/60)+'m' : '-'}</div></div>
     </div>
-    <h3 style="margin-bottom:12px">Spieler (${(players.players||[]).length})</h3>
-    ${renderPlayerTable(players.players || [])}
+    <h3 style="margin-bottom:12px">Spieler (${hasLive ? (players.players||[]).length : '?'})</h3>
+    ${hasLive ? renderPlayerTable(players.players || []) : '<div class="placeholder">Live-Daten nur bei geöffnetem Port 8080</div>'}
   `;
 }
 
@@ -228,6 +241,10 @@ function renderPlayerTable(players) {
 async function renderPlayers(el) {
   el.innerHTML = '<div class="loading">⏳ Lade...</div>';
   const data = await apiGet('players');
+  if (apiOffline) {
+    el.innerHTML = `<h2>👤 Spieler</h2><p class="subtitle">Live-Daten nicht verfügbar</p><div class="placeholder">Öffne Port 8080 für Spielerliste</div>`;
+    return;
+  }
   el.innerHTML = `
     <h2>👤 Spieler</h2>
     <p class="subtitle">${(data.players||[]).length} online</p>
@@ -238,6 +255,10 @@ async function renderPlayers(el) {
 async function renderBoss(el) {
   el.innerHTML = '<div class="loading">⏳ Lade...</div>';
   const status = await apiGet('bosses/status');
+  if (apiOffline) {
+    el.innerHTML = `<h2>👹 Boss</h2><p class="subtitle">Live-Daten nicht verfügbar</p><div class="placeholder">Öffne Port 8080 für Boss-Daten</div>`;
+    return;
+  }
   el.innerHTML = `
     <h2>👹 Boss</h2>
     <p class="subtitle">Boss-Konfiguration</p>
@@ -255,6 +276,10 @@ async function renderBoss(el) {
 async function renderEvents(el) {
   el.innerHTML = '<div class="loading">⏳ Lade...</div>';
   const status = await apiGet('events/status');
+  if (apiOffline) {
+    el.innerHTML = `<h2>🎯 Events</h2><p class="subtitle">Live-Daten nicht verfügbar</p><div class="placeholder">Öffne Port 8080 für Event-Daten</div>`;
+    return;
+  }
   el.innerHTML = `
     <h2>🎯 Events</h2>
     <p class="subtitle">Aktive Events</p>
@@ -271,6 +296,10 @@ let lbTab = 'kills';
 async function renderLeaderboards(el) {
   el.innerHTML = '<div class="loading">⏳ Lade...</div>';
   const data = await apiGet('leaderboards');
+  if (apiOffline) {
+    el.innerHTML = `<h2>🏆 Leaderboards</h2><p class="subtitle">Live-Daten nicht verfügbar</p><div class="placeholder">Öffne Port 8080 für Leaderboards</div>`;
+    return;
+  }
   const types = ['kills', 'hearts', 'eliminations'];
   el.innerHTML = `
     <h2>🏆 Leaderboards</h2>
@@ -291,6 +320,10 @@ function renderLBTable(entries) {
 async function renderPremium(el) {
   el.innerHTML = '<div class="loading">⏳ Lade...</div>';
   const data = await apiGet('premium');
+  if (apiOffline) {
+    el.innerHTML = `<h2>💎 Premium</h2><p class="subtitle">Lizenz-Status</p><div class="placeholder">Live-Daten nicht verfügbar</div>`;
+    return;
+  }
   el.innerHTML = `
     <h2>💎 Premium</h2>
     <p class="subtitle">Lizenz-Status</p>
@@ -314,6 +347,19 @@ async function renderTeams(el) {
 async function renderServerInfo(el) {
   el.innerHTML = '<div class="loading">⏳ Lade...</div>';
   const data = await apiGet('server');
+  if (apiOffline) {
+    el.innerHTML = `
+      <h2>ℹ️ Server Info</h2>
+      <p class="subtitle">Details (aus Heartbeat)</p>
+      <div class="info-grid">
+        <div class="info-item"><div class="ilabel">Plugin-Version</div><div class="ivalue">${serverData.plugin_version || '?'}</div></div>
+        <div class="info-item"><div class="ilabel">Server-Version</div><div class="ivalue">${serverData.server_version || '?'}</div></div>
+        <div class="info-item"><div class="ilabel">IP</div><div class="ivalue">${serverData.ip || '?'}:${serverData.port || 8080}</div></div>
+        <div class="info-item"><div class="ilabel">MOTD</div><div class="ivalue">${serverData.motd || '?'}</div></div>
+      </div>
+      <div class="placeholder" style="margin-top:16px">Live-Daten nur bei geöffnetem Port 8080</div>`;
+    return;
+  }
   el.innerHTML = `
     <h2>ℹ️ Server Info</h2>
     <p class="subtitle">Details</p>
