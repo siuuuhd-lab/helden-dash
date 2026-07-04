@@ -24,7 +24,9 @@ db.exec(`
 `);
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+const publicDir = path.join(__dirname, 'public');
+const staticDir = require('fs').existsSync(publicDir) ? publicDir : __dirname;
+app.use(express.static(staticDir));
 
 app.post('/api/register', (req, res) => {
   const { key, ip, port, server_name, motd, online_players, max_players, server_version, plugin_version } = req.body;
@@ -119,11 +121,11 @@ app.get('/api/v1/*', async (req, res) => {
 });
 
 app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+  res.sendFile(path.join(staticDir, 'dashboard.html'));
 });
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(staticDir, 'index.html'));
 });
 
 app.listen(PORT, () => {
